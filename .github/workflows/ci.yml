@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 测试 (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.13 是本地开发和验收实际用的版本；3.11 / 3.12 是部署环境里更常见的版本。
+        # 只声明「跑过」的版本，不写没验证过的 —— CI 徽章红了比版本号好看重要。
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: 运行单元测试
+        # 全程不需要任何 API Key：引擎自动降级到规则层，
+        # 模型相关路径用假客户端接管。示例文件是提交进仓库的产物，
+        # 所以这里能直接读到 —— 测试测的就是用户点开的那几份文件。
+        env:
+          LLM_API_KEY: ""
+          VISION_MODEL: ""
+          EXTRACT_ENGINE: "auto"
+          STORE_PERSIST: "false"
+        run: pytest -v
+
+  e2e:
+    name: 端到端黑盒验收
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 起服务并跑验收
+        # 关键：故意**在别的目录**启动服务（--app-dir 只影响 sys.path，
+        # 不改进程的当前工作目录）。项目里所有资源路径都锚定到包目录，
+        # 而不是「当前目录」—— 这一步就是在 CI 里证明这句话。
+        # 曾经 /api/examples 用的是相对路径，从别处启动时首页正常、
+        # 只有示例接口静默 404，排查方向被完全带偏。
+        env:
+          LLM_API_KEY: ""
+          VISION_MODEL: ""
+          STORE_PERSIST: "false"
+          DATA_DIR: "/tmp/de-data"
+        run: |
+          cd /tmp
+          nohup uvicorn --app-dir "$GITHUB_WORKSPACE" app.main:app \
+            --host 127.0.0.1 --port 8111 > /tmp/uvicorn.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf --noproxy '*' http://127.0.0.1:8111/api/health > /dev/null; then
+              echo "服务已就绪"; break
+            fi
+            sleep 2
+          done
+          curl -sf --noproxy '*' http://127.0.0.1:8111/api/health \
+            || { echo "服务启动失败"; cat /tmp/uvicorn.log; exit 1; }
+          python "$GITHUB_WORKSPACE/scripts/e2e_check.py" http://127.0.0.1:8111
+
+      - name: 服务日志里不该有 ERROR
+        # favicon 曾经返回 JSONResponse({}, 204) —— 204 不允许带 body，
+        # uvicorn 每次都抛 RuntimeError 并往日志灌一整篇堆栈，
+        # 而客户端照样收到 204，单测也照样绿。这条断言专门守这种「看不见的错」。
+        run: |
+          if grep -qiE "ERROR|Traceback" /tmp/uvicorn.log; then
+            echo "服务日志里出现错误："; cat /tmp/uvicorn.log; exit 1
+          fi
+          echo "服务日志干净 ✓"
+
+      - name: 失败时打印服务日志
+        if: failure()
+        run: cat /tmp/uvicorn.log || true
+
+  docker:
+    name: 镜像构建验证
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 构建镜像
+        run: docker build -t doc-extractor:ci .
+
+      - name: 冒烟测试（启动容器并探测健康检查 + 抽一份发票）
+        run: |
+          docker run -d --name de-ci -p 8000:8000 doc-extractor:ci
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/api/health > /dev/null; then
+              echo "服务已就绪"; break
+            fi
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:8000/api/health || { docker logs de-ci; exit 1; }
+          # 示例文件在镜像里必须真的能读到（否则 /api/examples 全是 404）
+          curl -sf http://127.0.0.1:8000/api/examples | grep -q '"key"' \
+            || { echo "镜像里没有内置示例"; docker logs de-ci; exit 1; }
+          echo "镜像冒烟通过 ✓"

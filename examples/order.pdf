@@ -1,0 +1,64 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1597 >>
+stream
+BT /F1 15.00 Tf 50.00 782.00 Td (Sales Order Sheet) Tj ET
+BT /F1 11.00 Tf 50.00 729.00 Td (Order No.: SO-2026-001) Tj ET
+BT /F1 11.00 Tf 50.00 710.00 Td (Customer: Alpha Technology Ltd) Tj ET
+BT /F1 11.00 Tf 50.00 691.00 Td (Order Date: 2026-01-05) Tj ET
+BT /F1 11.00 Tf 50.00 672.00 Td (Delivery Date: 2026-01-20) Tj ET
+BT /F1 11.00 Tf 50.00 653.00 Td (Currency: CNY) Tj ET
+BT /F1 11.00 Tf 50.00 615.00 Td (Order Items) Tj ET
+0.80 w 50.00 506.00 370.00 84.00 re S
+0.80 w 50.00 569.00 m 420.00 569.00 l S
+0.80 w 50.00 548.00 m 420.00 548.00 l S
+0.80 w 50.00 527.00 m 420.00 527.00 l S
+0.80 w 190.00 590.00 m 190.00 506.00 l S
+0.80 w 250.00 590.00 m 250.00 506.00 l S
+0.80 w 335.00 590.00 m 335.00 506.00 l S
+BT /F1 10.00 Tf 54.00 575.50 Td (Item) Tj ET
+BT /F1 10.00 Tf 194.00 575.50 Td (Qty) Tj ET
+BT /F1 10.00 Tf 254.00 575.50 Td (Unit Price) Tj ET
+BT /F1 10.00 Tf 339.00 575.50 Td (Amount) Tj ET
+BT /F1 10.00 Tf 54.00 554.50 Td (Wireless Keyboard) Tj ET
+BT /F1 10.00 Tf 194.00 554.50 Td (12) Tj ET
+BT /F1 10.00 Tf 254.00 554.50 Td (199.00) Tj ET
+BT /F1 10.00 Tf 339.00 554.50 Td (2388.00) Tj ET
+BT /F1 10.00 Tf 54.00 533.50 Td (Mechanical Keyboard) Tj ET
+BT /F1 10.00 Tf 194.00 533.50 Td (5) Tj ET
+BT /F1 10.00 Tf 254.00 533.50 Td (499.50) Tj ET
+BT /F1 10.00 Tf 339.00 533.50 Td (2497.50) Tj ET
+BT /F1 10.00 Tf 54.00 512.50 Td (Monitor) Tj ET
+BT /F1 10.00 Tf 194.00 512.50 Td (3) Tj ET
+BT /F1 10.00 Tf 254.00 512.50 Td (1299.00) Tj ET
+BT /F1 10.00 Tf 339.00 512.50 Td (3897.00) Tj ET
+BT /F1 11.00 Tf 50.00 480.00 Td (Items: 3) Tj ET
+BT /F1 11.00 Tf 50.00 461.00 Td (Total Amount: 8782.50) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000247 00000 n 
+0000001895 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1992
+%%EOF

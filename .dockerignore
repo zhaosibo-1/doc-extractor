@@ -1,0 +1,27 @@
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+
+# 报告与缓存不进镜像
+docs/
+tests/
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# 上传的文件不打包进镜像（运行时会挂卷）
+data/
+
+# 开发工具配置
+pytest.ini
+requirements-dev.txt
+Dockerfile
+docker-compose.yml
+.dockerignore

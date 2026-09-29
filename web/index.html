@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文档 · 表格 · 图像结构化抽取</title>
+<style>
+:root{
+  --bg:#070a12; --bg2:#0c1120; --card:rgba(255,255,255,.033); --card2:#111828;
+  --border:rgba(255,255,255,.085); --border2:rgba(255,255,255,.17);
+  --text:#e8edf7; --dim:#93a3bb; --faint:#5f6f88;
+  --accent:#4f8cff; --accent2:#22d3ee; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; --purple:#a78bfa;
+  --mono:ui-monospace,"Cascadia Code",Consolas,"Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1100px 600px at 12% -8%,rgba(79,140,255,.15),transparent 60%),
+    radial-gradient(900px 500px at 92% 4%,rgba(34,211,238,.09),transparent 60%),
+    var(--bg);
+  color:var(--text);
+  font:14px/1.65 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.13);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.24)}
+
+/* ---------- 顶部 ---------- */
+header{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px);background:rgba(7,10,18,.8);border-bottom:1px solid var(--border)}
+.hwrap{max-width:1720px;margin:0 auto;padding:14px 26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:11px;font-size:16px;font-weight:650;letter-spacing:.2px}
+.logo .mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:15px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 4px 16px rgba(79,140,255,.4)}
+.logo small{color:var(--faint);font-weight:400;font-size:11.5px;letter-spacing:.4px}
+.spacer{flex:1}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{font-size:11.5px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.badge b{color:var(--text);font-weight:600;font-family:var(--mono)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--faint);flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.dot.off{background:var(--warn)}
+
+/* ---------- 布局 ---------- */
+main{max-width:1720px;margin:0 auto;padding:22px 26px 60px;display:grid;grid-template-columns:minmax(360px,420px) 1fr;gap:22px;align-items:start}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+@media(max-width:1180px){main{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:15px;overflow:hidden}
+.card>.hd{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.014)}
+.card>.hd h2{font-size:13.5px;font-weight:620;letter-spacing:.25px;display:flex;align-items:center;gap:8px}
+.card>.hd h2 .ico{color:var(--accent);font-size:15px}
+.card>.bd{padding:16px}
+.hd .spacer{flex:1}
+.hd .sub{font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+
+/* ---------- 标签页 ---------- */
+.tabs{display:flex;gap:6px;padding:4px;background:rgba(0,0,0,.26);border:1px solid var(--border);border-radius:11px;margin-bottom:14px}
+.tab{flex:1;text-align:center;padding:7px 10px;border-radius:8px;font-size:12.5px;color:var(--dim);cursor:pointer;transition:.16s;user-select:none;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.on{background:rgba(79,140,255,.17);color:#b9d1ff;border:1px solid rgba(79,140,255,.38);font-weight:600}
+.pane{display:none}
+.pane.on{display:block}
+
+/* ---------- 表单 ---------- */
+textarea{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:11px;color:var(--text);font:13px/1.72 var(--mono);padding:12px 13px;resize:vertical;outline:none;transition:border-color .16s,box-shadow .16s}
+textarea:focus{border-color:rgba(79,140,255,.55);box-shadow:0 0 0 3px rgba(79,140,255,.12)}
+textarea::placeholder{color:var(--faint)}
+select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:9px;color:var(--text);font:12.5px/1.5 inherit;padding:8px 10px;outline:none;cursor:pointer}
+select:focus{border-color:rgba(79,140,255,.55)}
+.lbl{font-size:11.5px;color:var(--faint);letter-spacing:.5px;margin-bottom:6px;display:block}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+
+.btn{border:1px solid var(--border2);background:rgba(255,255,255,.045);color:var(--text);padding:7px 13px;border-radius:9px;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.16s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.1);border-color:var(--border2)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn.primary{background:linear-gradient(135deg,var(--accent),#3b74e0);border-color:transparent;font-weight:600;box-shadow:0 4px 16px rgba(79,140,255,.32)}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;border-color:var(--border);color:var(--dim)}
+.btn.ghost:hover{color:var(--text)}
+.btn.sm{padding:5px 10px;font-size:11.5px;border-radius:8px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+/* 容差输入：紧挨着「重跑校验」按钮，视觉上从属于它 */
+.tolbox{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);
+  border:1px solid var(--border);border-radius:8px;padding:4px 9px;background:rgba(255,255,255,.03)}
+.tolbox input{width:82px;background:transparent;border:none;outline:none;color:var(--text);
+  font-family:var(--mono);font-size:11.5px;padding:1px 0}
+.tolbox input::placeholder{color:var(--dim);opacity:.65}
+
+/* ---------- 拖放区 ---------- */
+.drop{border:1.5px dashed var(--border2);border-radius:12px;padding:26px 18px;text-align:center;cursor:pointer;transition:.18s;background:rgba(255,255,255,.012)}
+.drop:hover,.drop.hot{border-color:rgba(79,140,255,.6);background:rgba(79,140,255,.06)}
+.drop .ico{font-size:26px;opacity:.5;margin-bottom:8px}
+.drop .t1{font-size:13px;color:var(--dim)}
+.drop .t2{font-size:11.5px;color:var(--faint);margin-top:5px;font-family:var(--mono)}
+.drop.has{border-style:solid;border-color:rgba(52,211,153,.42);background:rgba(52,211,153,.05)}
+
+/* ---------- 示例 ---------- */
+.exlist{display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto;padding-right:2px}
+.ex{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:.16s;background:rgba(255,255,255,.012)}
+.ex:hover{border-color:var(--border2);background:rgba(255,255,255,.045)}
+.ex.on{border-color:rgba(79,140,255,.45);background:rgba(79,140,255,.08)}
+.ex .k{font-size:10.5px;font-family:var(--mono);color:var(--accent2);flex:none;padding:2px 6px;border-radius:5px;background:rgba(34,211,238,.11);border:1px solid rgba(34,211,238,.26);text-transform:uppercase;margin-top:1px}
+.ex .body{min-width:0;flex:1}
+.ex .nm{font-size:12.5px;font-weight:560}
+.ex .ds{font-size:11.5px;color:var(--faint);line-height:1.6;margin-top:2px}
+
+/* ---------- 模板 ---------- */
+.tplgrid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.tplchip{font-size:11.5px;padding:5px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--dim);cursor:pointer;transition:.16s;white-space:nowrap}
+.tplchip:hover{color:var(--text);border-color:var(--border2)}
+.tplchip.on{background:rgba(79,140,255,.16);border-color:rgba(79,140,255,.45);color:#bcd3ff;font-weight:600}
+.tpldetail{border:1px solid var(--border);border-radius:11px;padding:12px 13px;background:rgba(79,140,255,.04)}
+.tpldetail .nm{font-size:13.5px;font-weight:620;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.tpldetail .ds{font-size:12px;color:var(--dim);line-height:1.72;margin-bottom:4px}
+.tpldetail .hint{font-size:11.5px;color:var(--faint);line-height:1.7;padding-left:11px;border-left:2px solid rgba(34,211,238,.34);margin-top:8px}
+.sect-t{font-size:11px;color:var(--faint);letter-spacing:1.1px;margin:13px 0 6px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:11px;padding:2.5px 8px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--dim);font-family:var(--mono)}
+.chip.must{background:rgba(79,140,255,.14);border-color:rgba(79,140,255,.36);color:#a8c6ff}
+.chip.hit{background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.33);color:#7fe3c0}
+.chip.gap{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.3);color:#fca5a5}
+.ruletxt{font-size:11.5px;color:var(--dim);padding:5px 0 5px 11px;border-left:2px solid rgba(167,139,250,.4);margin:4px 0;line-height:1.7}
+.ruletxt .kd{font-family:var(--mono);color:var(--purple);font-size:10.5px;margin-right:6px}
+
+/* ---------- 进度 ---------- */
+.progress{margin-bottom:15px;display:none}
+.progress.on{display:block}
+.bar{height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .35s ease}
+.progress .txt{margin-top:7px;font-size:11.5px;color:var(--dim);font-family:var(--mono);display:flex;justify-content:space-between;gap:10px}
+.stagelog{display:flex;flex-direction:column;gap:3px;margin-top:10px;font-family:var(--mono);font-size:11.5px;max-height:132px;overflow-y:auto}
+.sl{color:var(--faint);display:flex;gap:8px;align-items:baseline}
+.sl .tm{color:#46536a;flex:none}
+.sl.ok{color:#7fe3c0}
+.sl.err{color:#fca5a5}
+.sl.info{color:var(--dim)}
+
+/* ---------- 空状态 ---------- */
+.empty{padding:70px 30px;text-align:center;color:var(--faint);border:1px dashed var(--border);border-radius:15px;background:rgba(255,255,255,.012)}
+.empty .big{font-size:40px;opacity:.32;margin-bottom:14px}
+.empty h3{color:var(--dim);font-size:14.5px;font-weight:600;margin-bottom:7px}
+.empty p{font-size:12.5px;max-width:460px;margin:0 auto;line-height:1.85}
+
+/* ---------- 完成度 ---------- */
+.scorebox{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;padding:20px 22px}
+@media(max-width:620px){.scorebox{grid-template-columns:1fr;gap:18px}}
+.ring{position:relative;width:140px;height:140px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .num{font-size:37px;font-weight:700;font-family:var(--mono);line-height:1;letter-spacing:-1.5px}
+.ring .lbl{font-size:10.5px;color:var(--faint);margin-top:5px;letter-spacing:1.3px}
+.verdictline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+.verdict{font-size:19px;font-weight:680;letter-spacing:.3px}
+.vtag{font-size:11.5px;padding:3px 11px;border-radius:20px;font-weight:650;font-family:var(--mono)}
+.v-A{background:rgba(52,211,153,.16);color:#6ee7b7;border:1px solid rgba(52,211,153,.36)}
+.v-B{background:rgba(79,140,255,.16);color:#93b8ff;border:1px solid rgba(79,140,255,.36)}
+.v-C{background:rgba(251,191,36,.15);color:#fcd34d;border:1px solid rgba(251,191,36,.34)}
+.v-D{background:rgba(248,113,113,.14);color:#fca5a5;border:1px solid rgba(248,113,113,.33)}
+.kpis{display:flex;gap:22px;flex-wrap:wrap}
+.kpi .n{font-size:16.5px;font-weight:660;font-family:var(--mono)}
+.kpi .t{font-size:11px;color:var(--faint);margin-top:2px}
+
+/* ---------- 字段表 ---------- */
+.ftable{display:flex;flex-direction:column;gap:8px}
+.frow{border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:border-color .16s;background:rgba(255,255,255,.012)}
+.frow:hover{border-color:var(--border2)}
+.frow.bad{border-color:rgba(248,113,113,.36)}
+.frow.warn{border-color:rgba(251,191,36,.34)}
+.frow .top{display:grid;grid-template-columns:150px 1fr 96px 92px;gap:12px;align-items:center;padding:11px 13px}
+@media(max-width:900px){.frow .top{grid-template-columns:1fr;gap:7px}}
+.frow .fname{min-width:0}
+.frow .fkey{font-size:11px;color:var(--faint);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .flabel{font-size:13px;font-weight:580;display:flex;align-items:center;gap:6px}
+.frow .fval{font-family:var(--mono);font-size:13.5px;word-break:break-all;color:var(--text)}
+.frow .fval.nil{color:var(--faint);font-style:italic}
+.conf{display:flex;align-items:center;gap:7px}
+.conf .cbar{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;min-width:38px}
+.conf .cbar i{display:block;height:100%;border-radius:3px;transition:width .4s}
+.conf .cnum{font-family:var(--mono);font-size:11px;color:var(--dim);width:36px;text-align:right;flex:none}
+.st{font-size:11px;padding:2.5px 9px;border-radius:6px;font-weight:620;text-align:center;white-space:nowrap;font-family:var(--mono)}
+.st.ok{background:rgba(52,211,153,.15);color:#6ee7b7;border:1px solid rgba(52,211,153,.33)}
+.st.missing{background:rgba(255,255,255,.06);color:var(--faint);border:1px solid var(--border)}
+.st.invalid{background:rgba(248,113,113,.15);color:#fca5a5;border:1px solid rgba(248,113,113,.34)}
+.st.low_confidence{background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.32)}
+.srcbar{display:flex;align-items:center;gap:10px;padding:0 13px 11px;flex-wrap:wrap;font-size:11.5px}
+.srctag{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:5px;background:rgba(167,139,250,.13);border:1px solid rgba(167,139,250,.3);color:#c9b8ff;flex:none}
+.srctag.label{background:rgba(79,140,255,.14);border-color:rgba(79,140,255,.34);color:#a8c6ff}
+.srctag.column{background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.32);color:#7fe3c0}
+.srctag.regex{background:rgba(34,211,238,.13);border-color:rgba(34,211,238,.3);color:#7ddcef}
+.srctag.llm{background:rgba(167,139,250,.15);border-color:rgba(167,139,250,.34);color:#c9b8ff}
+.srctag.none{background:rgba(255,255,255,.05);border-color:var(--border);color:var(--faint)}
+.srcloc{color:var(--dim);font-family:var(--mono);font-size:11px}
+.srcmsg{font-size:11.5px;color:var(--dim);line-height:1.7;padding:0 13px 10px}
+.srcmsg .m{padding-left:11px;border-left:2px solid rgba(79,140,255,.34);margin:3px 0}
+.reqtip{font-size:9.5px;padding:1px 5px;border-radius:4px;background:rgba(79,140,255,.18);color:#b9d1ff;font-family:var(--mono);font-weight:600}
+
+/* ---------- 规则 ---------- */
+.rules{display:flex;flex-direction:column;gap:7px}
+.rule{display:flex;gap:11px;align-items:flex-start;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.012)}
+.rule .mark{font-size:14px;flex:none;line-height:1.3;width:16px;text-align:center}
+.rule.pass .mark{color:var(--ok)}
+.rule.fail .mark{color:var(--bad)}
+.rule.skip .mark{color:var(--faint)}
+.rule .body{min-width:0;flex:1}
+.rule .t1{font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rule .kd{font-size:10.5px;font-family:var(--mono);color:var(--purple);padding:1.5px 6px;border-radius:5px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.28)}
+.rule .soft{font-size:10px;font-family:var(--mono);color:var(--warn);padding:1.5px 6px;border-radius:5px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28)}
+.rule .t2{font-size:11.5px;color:var(--faint);font-family:var(--mono);margin-top:4px;line-height:1.7;word-break:break-word}
+
+/* ---------- 数据表 ---------- */
+.tblwrap{overflow:auto;border:1px solid var(--border);border-radius:10px;max-height:400px}
+table{border-collapse:collapse;width:100%;font-size:12px;font-family:var(--mono)}
+th,td{padding:7px 11px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{background:rgba(255,255,255,.045);color:var(--dim);font-weight:600;position:sticky;top:0;backdrop-filter:blur(8px);z-index:2;font-size:11.5px}
+td{color:var(--text)}
+tbody tr:hover td{background:rgba(79,140,255,.055)}
+tbody tr:last-child td{border-bottom:none}
+.tblmeta{display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding:9px 0 10px;font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+.tblmeta .pill{padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.055);border:1px solid var(--border)}
+.tblmeta .pill.tr{color:var(--warn);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.1)}
+.emptytbl{padding:22px;text-align:center;color:var(--faint);font-size:12.5px}
+
+/* ---------- 警告 ---------- */
+.warns{display:flex;flex-direction:column;gap:6px}
+.warn-i{font-size:12px;color:#fcd34d;padding:8px 12px;border-radius:9px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.26);line-height:1.7;display:flex;gap:9px;align-items:flex-start}
+.warn-i .ic{flex:none}
+.warn-i.err{color:#fca5a5;background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.26)}
+.warn-i.info{color:#93b8ff;background:rgba(79,140,255,.07);border-color:rgba(79,140,255,.24)}
+
+/* ---------- 文本预览 ---------- */
+.pre{margin-top:11px;background:rgba(0,0,0,.34);border:1px solid var(--border);border-radius:10px;padding:12px 13px;font:11.5px/1.78 var(--mono);color:var(--dim);max-height:280px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.pre .pg{color:var(--accent2)}
+
+/* ---------- JSON ---------- */
+.jsonbox{background:rgba(0,0,0,.36);border:1px solid var(--border);border-radius:10px;padding:13px;font:11.5px/1.72 var(--mono);color:#a8c6ff;max-height:420px;overflow:auto;white-space:pre}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar .spacer{flex:1}
+
+.footnote{font-size:11.5px;color:var(--faint);line-height:1.8;padding:0 26px 34px;max-width:1720px;margin:0 auto}
+.footnote code{font-family:var(--mono);color:var(--dim);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px}
+.toast{position:fixed;right:22px;bottom:22px;z-index:200;display:flex;flex-direction:column;gap:9px;align-items:flex-end}
+.tst{padding:11px 15px;border-radius:11px;font-size:12.5px;background:rgba(17,24,40,.96);border:1px solid var(--border2);box-shadow:0 10px 34px rgba(0,0,0,.5);animation:slide .3s ease;max-width:420px;line-height:1.65}
+.tst.ok{border-color:rgba(52,211,153,.45)}
+.tst.err{border-color:rgba(248,113,113,.5);color:#fca5a5}
+@keyframes slide{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.22);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="logo">
+      <span class="mark">🗂</span>
+      <div>
+        文档 · 表格 · 图像结构化抽取<br>
+        <small>规则优先 · 模型补漏 · 校验兜底</small>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="badges" id="badges">
+      <span class="badge"><span class="dot"></span>连接中…</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= 左列：输入与配置 ================= -->
+  <div class="col">
+    <div class="card">
+      <div class="hd"><h2><span class="ico">⇥</span>数据输入</h2><div class="spacer"></div><span class="sub" id="srcState">未选择</span></div>
+      <div class="bd">
+        <div class="tabs" id="modeTabs">
+          <div class="tab on" data-mode="text">✎ 文本粘贴</div>
+          <div class="tab" data-mode="file">⇧ 文件上传</div>
+          <div class="tab" data-mode="example">◉ 内置示例</div>
+        </div>
+
+        <!-- 文本 -->
+        <div class="pane on" data-pane="text">
+          <textarea id="textInput" rows="13" placeholder="把发票、名片、合同、订单报表的文字内容粘贴到这里…&#10;&#10;支持「标签：值」行、自由段落，以及 Tab / 逗号分隔的表格数据。"></textarea>
+          <div class="meta"><span id="textCount">0 字符</span><span>发往 /api/extract</span></div>
+        </div>
+
+        <!-- 文件 -->
+        <div class="pane" data-pane="file">
+          <div class="drop" id="drop">
+            <div class="ico">⇧</div>
+            <div class="t1">点击选择，或把文件拖到这里</div>
+            <div class="t2">pdf · docx · xlsx · csv · txt · md · png · jpg（≤ 20 MB）</div>
+          </div>
+          <input type="file" id="fileInput" style="display:none"
+                 accept=".pdf,.docx,.xlsx,.xlsm,.csv,.tsv,.txt,.md,.markdown,.log,.png,.jpg,.jpeg,.gif,.bmp,.webp,.tif,.tiff">
+          <div id="fileCard" style="margin-top:12px"></div>
+        </div>
+
+        <!-- 示例 -->
+        <div class="pane" data-pane="example">
+          <div class="exlist" id="exList"><div class="emptytbl">加载中…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><h2><span class="ico">◫</span>抽取模板</h2><div class="spacer"></div><span class="sub">Schema 驱动</span></div>
+      <div class="bd">
+        <div class="tplgrid" id="tplGrid"></div>
+        <div id="tplDetail"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><h2><span class="ico">▶</span>执行</h2></div>
+      <div class="bd">
+        <label class="lbl">抽取引擎</label>
+        <select id="engineSel">
+          <option value="auto">auto — 规则优先，模型补漏（推荐）</option>
+          <option value="rule">rule — 只用规则，零模型调用</option>
+          <option value="llm">llm — 主要交给模型</option>
+        </select>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn primary" id="btnRun">⌁ 开始抽取</button>
+          <button class="btn" id="btnParse">◌ 仅解析预览</button>
+          <button class="btn ghost" id="btnClear">清空</button>
+        </div>
+        <div class="meta" style="margin-top:9px"><span id="engineHint">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 右列：结果 ================= -->
+  <div class="col">
+    <div class="card">
+      <div class="hd"><h2><span class="ico">⌁</span>抽取结果</h2><div class="spacer"></div><span class="sub" id="elapsed"></span></div>
+      <div class="bd">
+        <div class="progress" id="progress">
+          <div class="bar"><i id="barFill"></i></div>
+          <div class="txt"><span id="stageTxt">准备中…</span><span id="pctTxt">0%</span></div>
+          <div class="stagelog" id="stageLog"></div>
+        </div>
+
+        <div id="resultArea">
+          <div class="empty">
+            <div class="big">🗂</div>
+            <h3>还没有抽取结果</h3>
+            <p>左边挑一个内置示例，或粘贴一段文本、上传一份文件，然后点「开始抽取」。<br>
+               每条结果都会标注它的来源定位与置信度 —— 你可以回到原文核对每一个值。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="cardParse" style="display:none">
+      <div class="hd"><h2><span class="ico">◌</span>解析预览</h2><div class="spacer"></div><span class="sub">只解析，不抽字段</span></div>
+      <div class="bd" id="parseArea"></div>
+    </div>
+  </div>
+</main>
+
+<div class="footnote">
+  三层分工：<code>解析层</code> 把 6 种格式归一成统一中间表示 → <code>抽取层</code> 按模板 Schema 填字段 → <code>校验层</code> 做类型、单字段与跨字段一致性检查。
+  任何降级（扫描件无文字层、页数超限、表格截断、公式无缓存值）都会显式写进 warnings，绝不静默丢内容。
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ===========================================================================
+// 状态
+// ===========================================================================
+const S = {
+  config:null, templates:[], examples:[], templateDetail:null,
+  mode:'text', template:'generic', fileId:'', fileName:'', fileDoc:null,
+  result:null, parsing:false, running:false, lastPayload:null,
+  // 容差输入框的内容。留在状态里，是因为「重跑校验」会整块重建结果区 ——
+  // 不留的话用户每调一次容差都要重新输一遍数字。
+  tolerance:'',
+};
+
+const $  = (id) => document.getElementById(id);
+const $$ = (sel, root) => Array.from((root||document).querySelectorAll(sel));
+const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct = (v) => Math.round((v||0)*100);
+
+// ===========================================================================
+// 通用请求
+// ===========================================================================
+async function api(path, opts={}){
+  const res = await fetch(path, opts);
+  const ct = res.headers.get('content-type') || '';
+  let body = null;
+  if(ct.includes('json')) body = await res.json().catch(()=>null);
+  else body = await res.text().catch(()=>'');
+  if(!res.ok){
+    const msg = (body && typeof body === 'object' && body.detail) ? body.detail : (body || res.statusText);
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  return body;
+}
+const postJSON = (p, obj) => api(p, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(obj)});
+
+function toast(msg, kind=''){
+  const el = document.createElement('div');
+  el.className = 'tst ' + kind;
+  el.innerHTML = esc(msg);
+  $('toast').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='.3s'; }, 3600);
+  setTimeout(()=>el.remove(), 4000);
+}
+
+// ===========================================================================
+// 启动
+// ===========================================================================
+async function boot(){
+  try{
+    const [health, config, templates, examples, stats] = await Promise.all([
+      api('/api/health'), api('/api/config'), api('/api/templates'),
+      api('/api/examples'), api('/api/stats'),
+    ]);
+    S.config = config; S.templates = templates; S.examples = examples;
+    renderBadges(health, config, stats);
+    renderTemplates();
+    renderExamples();
+    await selectTemplate('generic');
+    toast('服务已就绪 · ' + health.templates + ' 套模板可用', 'ok');
+  }catch(err){
+    $('badges').innerHTML = '<span class="badge"><span class="dot off"></span>连接失败：' + esc(err.message) + '</span>';
+    toast('无法连接后端：' + err.message, 'err');
+  }
+}
+
+function renderBadges(health, cfg, stats){
+  const dot = (on) => '<span class="dot ' + (on?'on':'off') + '"></span>';
+  const items = [
+    ['版本', health.version, true],
+    ['引擎', cfg.engine, true],
+    ['模型', cfg.llm_enabled ? cfg.model : '未配置', cfg.llm_enabled],
+    ['视觉', cfg.vision_enabled ? cfg.vision_model : '未配置', cfg.vision_enabled],
+    ['模板', health.templates, true],
+    ['文件', stats.files_stored, true],
+  ];
+  $('badges').innerHTML = items.map(([t,v,on]) =>
+    '<span class="badge">' + dot(on) + esc(t) + ' <b>' + esc(v) + '</b></span>').join('');
+  $('engineHint').textContent = cfg.llm_enabled
+    ? ('模型 ' + cfg.model + ' · Key ' + cfg.api_key_masked)
+    : '未配置 API Key：规则引擎仍可完整工作，模型补漏与图片识别会跳过';
+}
+
+// ===========================================================================
+// 模板
+// ===========================================================================
+function renderTemplates(){
+  $('tplGrid').innerHTML = S.templates.map(t =>
+    '<div class="tplchip' + (t.key===S.template?' on':'') + '" data-key="' + esc(t.key) + '">' +
+      esc(t.label) + ' <span style="opacity:.6;font-family:var(--mono);font-size:10px">' + t.field_count + 'f/' + t.rule_count + 'r</span>' +
+    '</div>').join('');
+  $$('#tplGrid .tplchip').forEach(el => el.onclick = () => selectTemplate(el.dataset.key));
+}
+
+async function selectTemplate(key){
+  S.template = key;
+  $$('#tplGrid .tplchip').forEach(el => el.classList.toggle('on', el.dataset.key === key));
+  try{
+    const t = await api('/api/templates/' + encodeURIComponent(key));
+    S.templateDetail = t;
+    renderTemplateDetail(t);
+  }catch(err){ toast('模板加载失败：' + err.message, 'err'); }
+}
+
+function renderTemplateDetail(t){
+  const reqs = (t.fields||[]).filter(f => f.required).length;
+  let html = '<div class="tpldetail">' +
+    '<div class="nm">' + esc(t.label) + '<span class="chip">' + esc(t.key) + '</span></div>' +
+    '<div class="ds">' + esc(t.description || '') + '</div>';
+  if(t.hint) html += '<div class="hint">' + esc(t.hint) + '</div>';
+
+  if(t.fields && t.fields.length){
+    html += '<div class="sect-t">字段定义 · ' + t.fields.length + ' 个（其中 ' + reqs + ' 个必填）</div><div class="chips">';
+    html += t.fields.map(f =>
+      '<span class="chip' + (f.required?' must':'') + '" title="' + esc((f.aliases||[]).join(' / ')) + '">' +
+        esc(f.label || f.key) + (f.required ? ' *' : '') + '</span>').join('');
+    html += '</div>';
+  }else{
+    html += '<div class="sect-t">字段定义</div><div class="ds">通用模板不预设字段：会自动把所有「标签: 值」与表格列抽出来，适合摸清陌生文档里有什么。</div>';
+  }
+  if(t.rules && t.rules.length){
+    html += '<div class="sect-t">跨字段校验 · ' + t.rules.length + ' 条</div>';
+    html += t.rules.map(r => '<div class="ruletxt"><span class="kd">' + esc(r.kind) + '</span>' + esc(ruleText(r, t)) + '</div>').join('');
+  }
+  html += '</div>';
+  $('tplDetail').innerHTML = html;
+}
+
+function ruleText(r, t){
+  const K = {equals:'字段相等',expr:'算术关系',row_expr:'逐行算术',sum_column:'明细合计',row_count:'行数检查',date_order:'日期先后',required_together:'同时必填'};
+  if(r.message) return r.message;
+  if(r.kind==='expr') return (r.target?('「'+r.target+'」应为 '):'') + r.expression;
+  if(r.kind==='row_expr') return '每行 ' + r.expression + ' 应等于「' + r.column + '」';
+  if(r.kind==='sum_column') return '明细列「' + r.column + '」之和应等于「' + r.target + '」';
+  if(r.kind==='row_count') return '明细应有 ' + r.expected + ' 行';
+  if(r.kind==='date_order') return (r.fields||[]).join(' ≤ ');
+  if(r.kind==='required_together') return (r.fields||[]).join('、') + ' 需同时存在';
+  return (K[r.kind]||r.kind) + '：' + (r.fields||[]).join(' = ');
+}
+
+// ===========================================================================
+// 示例
+// ===========================================================================
+function renderExamples(){
+  if(!S.examples.length){ $('exList').innerHTML = '<div class="emptytbl">暂无示例</div>'; return; }
+  $('exList').innerHTML = S.examples.map(e => {
+    const size = e.size > 1024 ? (e.size/1024).toFixed(1)+' KB' : (e.size + ' B');
+    return '<div class="ex" data-key="' + esc(e.key) + '">' +
+      '<span class="k">' + esc(e.kind) + '</span>' +
+      '<div class="body"><div class="nm">' + esc(e.label) + '</div>' +
+      '<div class="ds">' + esc(e.description) + ' <span style="font-family:var(--mono);opacity:.7">· ' + size + '</span></div></div>' +
+    '</div>';
+  }).join('');
+  $$('#exList .ex').forEach(el => el.onclick = () => loadExample(el.dataset.key, el));
+}
+
+async function loadExample(key, el){
+  $$('#exList .ex').forEach(x => x.classList.remove('on'));
+  if(el) el.classList.add('on');
+  const meta = S.examples.find(x => x.key === key);
+  if(!meta) return;
+  try{
+    if(['txt','md','markdown','csv','tsv','log'].includes(meta.kind)){
+      const d = await api('/api/examples/' + encodeURIComponent(key));
+      setMode('text');
+      $('textInput').value = d.content || '';
+      onTextInput();
+      S.fileId = ''; S.fileName = d.label;
+      $('fileCard').innerHTML = '';
+      updateSrcState('示例文本 · ' + d.label);
+      toast('已载入示例文本，可直接抽取', 'ok');
+    }else{
+      const r = await postJSON('/api/examples/' + encodeURIComponent(key) + '/load', {});
+      setMode('file');
+      S.fileId = r.file_id; S.fileName = r.name; S.fileDoc = r.doc;
+      renderFileCard(r);
+      updateSrcState('示例文件 · ' + r.name);
+      $('drop').classList.add('has');
+      toast('已把示例文件载入工作区', 'ok');
+    }
+    if(meta.template) await selectTemplate(meta.template);
+    refreshStats();
+  }catch(err){ toast('示例载入失败：' + err.message, 'err'); }
+}
+
+async function refreshStats(){
+  try{
+    const st = await api('/api/stats');
+    const h = await api('/api/health');
+    const cfg = S.config || {};
+    const dot = (on) => '<span class="dot ' + (on?'on':'off') + '"></span>';
+    $('badges').innerHTML = [
+      ['版本', h.version, true], ['引擎', cfg.engine, true],
+      ['模型', cfg.llm_enabled ? cfg.model : '未配置', cfg.llm_enabled],
+      ['视觉', cfg.vision_enabled ? cfg.vision_model : '未配置', cfg.vision_enabled],
+      ['模板', h.templates, true], ['文件', st.files_stored, true],
+      ['抽取', st.extractions_run, true],
+    ].map(([t,v,on]) => '<span class="badge">' + dot(on) + esc(t) + ' <b>' + esc(v) + '</b></span>').join('');
+  }catch(_){}
+}
+
+function updateSrcState(text){ $('srcState').textContent = text; }
+
+// ===========================================================================
+// 输入模式
+// ===========================================================================
+function setMode(mode){
+  S.mode = mode;
+  $$('#modeTabs .tab').forEach(t => t.classList.toggle('on', t.dataset.mode === mode));
+  $$('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === mode));
+}
+$$('#modeTabs .tab').forEach(t => t.onclick = () => setMode(t.dataset.mode));
+
+function onTextInput(){
+  const v = $('textInput').value;
+  $('textCount').textContent = v.length + ' 字符';
+  if(S.mode === 'text' && v.trim()) updateSrcState('粘贴文本 · ' + v.length + ' 字符');
+}
+
+// 拖放
+const drop = $('drop');
+drop.onclick = () => $('fileInput').click();
+$('fileInput').onchange = (e) => { if(e.target.files[0]) uploadFile(e.target.files[0]); };
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hot'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('hot'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if(f) uploadFile(f); });
+
+async function uploadFile(file){
+  const fd = new FormData();
+  fd.append('file', file);
+  drop.innerHTML = '<div class="ico"><span class="spin"></span></div><div class="t1">正在解析 ' + esc(file.name) + '…</div>';
+  try{
+    const r = await api('/api/files', {method:'POST', body:fd});
+    S.fileId = r.file_id; S.fileName = r.name; S.fileDoc = r.doc;
+    renderFileCard(r);
+    drop.classList.add('has');
+    drop.innerHTML = '<div class="ico">✓</div><div class="t1">' + esc(r.name) + '</div><div class="t2">点击可重新选择</div>';
+    updateSrcState('已上传 · ' + r.name);
+    toast('上传成功：识别为 ' + r.doc.kind + '（' + r.doc.detail + '）', 'ok');
+    refreshStats();
+  }catch(err){
+    drop.classList.remove('has');
+    drop.innerHTML = '<div class="ico">⇧</div><div class="t1">点击选择，或把文件拖到这里</div><div class="t2">上传失败，请重试</div>';
+    toast('上传失败：' + err.message, 'err');
+  }
+}
+
+function renderFileCard(r){
+  const d = r.doc;
+  let h = '<div class="tpldetail"><div class="nm">' + esc(d.name) + '<span class="chip">' + esc(d.kind) + '</span></div>';
+  h += '<div class="chips">';
+  h += '<span class="chip">' + esc(d.detail) + '</span>';
+  h += '<span class="chip">' + d.char_count + ' 字符</span>';
+  h += '<span class="chip">' + d.table_count + ' 张表</span>';
+  h += '<span class="chip">' + d.block_count + ' 个块</span>';
+  if(d.pages > 1) h += '<span class="chip">' + d.pages + ' 页</span>';
+  if(d.encoding) h += '<span class="chip">' + esc(d.encoding) + '</span>';
+  h += '</div>';
+  if(d.needs_ocr) h += '<div class="hint" style="color:#fcd34d;border-color:rgba(251,191,36,.4)">这份文档没有文字层（扫描件），需要视觉模型才能读出内容。</div>';
+  if(d.warnings && d.warnings.length){
+    h += '<div class="sect-t">解析降级提示</div>' + d.warnings.map(w => '<div class="ruletxt">' + esc(w) + '</div>').join('');
+  }
+  h += '</div>';
+  $('fileCard').innerHTML = h;
+}
+
+// ===========================================================================
+// 执行抽取
+// ===========================================================================
+function buildPayload(){
+  const p = { template: S.template, engine: $('engineSel').value };
+  if(S.mode === 'file'){
+    if(!S.fileId) throw new Error('请先上传文件或选择一个二进制示例');
+    p.file_id = S.fileId;
+  }else{
+    const t = $('textInput').value;
+    if(!t.trim()) throw new Error('请输入或粘贴文本内容');
+    p.text = t;
+  }
+  return p;
+}
+
+function resetProgress(){
+  $('progress').classList.add('on');
+  $('barFill').style.width = '0%';
+  $('stageTxt').textContent = '准备中…';
+  $('pctTxt').textContent = '0%';
+  $('stageLog').innerHTML = '';
+}
+
+function logStage(text, kind='info'){
+  const tm = new Date().toTimeString().slice(0,8);
+  const d = document.createElement('div');
+  d.className = 'sl ' + kind;
+  d.innerHTML = '<span class="tm">' + tm + '</span><span>' + esc(text) + '</span>';
+  $('stageLog').appendChild(d);
+  $('stageLog').scrollTop = $('stageLog').scrollHeight;
+}
+
+$('btnRun').onclick = async () => {
+  if(S.running) return;
+  let payload;
+  try{ payload = buildPayload(); }catch(err){ toast(err.message, 'err'); return; }
+  S.running = true;
+  $('btnRun').disabled = true;
+  $('btnRun').innerHTML = '<span class="spin"></span> 抽取中…';
+  S.lastPayload = payload;
+  resetProgress();
+  logStage('请求已发出：模板=' + payload.template + '，引擎=' + payload.engine);
+  try{
+    await runStream(payload);
+  }catch(err){
+    logStage('失败：' + err.message, 'err');
+    toast('抽取失败：' + err.message, 'err');
+  }finally{
+    S.running = false;
+    $('btnRun').disabled = false;
+    $('btnRun').innerHTML = '⌁ 开始抽取';
+    refreshStats();
+  }
+};
+
+/** 用 fetch 读 SSE：EventSource 不支持 POST，而我们的抽取请求必须带 body。 */
+async function runStream(payload){
+  const res = await fetch('/api/extract/stream', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload),
+  });
+  if(!res.ok){
+    let detail = res.statusText;
+    try{ const j = await res.json(); if(j.detail) detail = j.detail; }catch(_){}
+    throw new Error(detail);
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  for(;;){
+    const {done, value} = await reader.read();
+    if(done) break;
+    buf += dec.decode(value, {stream:true});
+    let i;
+    while((i = buf.indexOf('\n\n')) >= 0){
+      const chunk = buf.slice(0, i);
+      buf = buf.slice(i + 2);
+      handleSSE(chunk);
+    }
+  }
+}
+
+function handleSSE(chunk){
+  let ev = 'message', data = '';
+  for(const line of chunk.split('\n')){
+    if(line.startsWith('event:')) ev = line.slice(6).trim();
+    else if(line.startsWith('data:')) data += line.slice(5).trim();
+  }
+  if(ev === '[DONE]') return;
+  let json = null;
+  try{ json = data ? JSON.parse(data) : null; }catch(_){ return; }
+
+  if(ev === 'start'){
+    // 这里只说模板与文档，**不提引擎** —— 请求的引擎上面那行已经说了，
+    // 实际干活的引擎要等 done 才知道。两处都写引擎、写的又不是同一个值，
+    // 就会出现「日志说 auto、结果卡片说 rule」这种自相矛盾的画面。
+    logStage('模板 ' + json.template_label + ' · 文档 ' + (json.doc ? json.doc.kind : ''), 'info');
+  }else if(ev === 'stage'){
+    $('stageTxt').textContent = json.message;
+    $('barFill').style.width = json.percent + '%';
+    $('pctTxt').textContent = json.percent + '%';
+    logStage(json.message, 'info');
+  }else if(ev === 'parsed'){
+    logStage('解析完成：' + json.kind + '，' + json.char_count + ' 字符，' + json.table_count + ' 张表'
+      + (json.needs_ocr ? '，扫描件需视觉模型' : ''), json.needs_ocr ? 'err' : 'ok');
+    (json.warnings||[]).forEach(w => logStage('降级：' + w, 'err'));
+  }else if(ev === 'fields'){
+    logStage('字段抽取完成：' + json.filled + '/' + json.total + ' 已填，明细 ' + json.rows + ' 行', 'ok');
+  }else if(ev === 'rules'){
+    logStage('一致性校验：通过 ' + json.passed + '，失败 ' + json.failed + '，跳过 ' + json.skipped,
+      json.failed ? 'err' : 'ok');
+  }else if(ev === 'done'){
+    $('barFill').style.width = '100%';
+    $('pctTxt').textContent = '100%';
+    $('stageTxt').textContent = '完成';
+    S.result = json;
+    renderResult(json);
+    // 请求的引擎 != 实际干活的引擎时，明确说一句，并**用后端给的原因**。
+    // 前端自己猜（"应该是没配 Key 吧"）在「配了 Key 但规则层已全覆盖」时会猜错。
+    if(json.engine_mode && json.engine_mode !== json.engine){
+      logStage('实际由 ' + json.engine + ' 引擎完成（请求的是 ' + json.engine_mode + '）：' +
+        (json.engine_note || '详见下方提示'), json.engine === 'rule' ? 'info' : 'ok');
+    }
+    logStage('渲染完成', 'ok');
+    toast('抽取完成 · 完成度 ' + json.completeness.toFixed(1) + '%', 'ok');
+  }else if(ev === 'error'){
+    logStage('错误：' + json.error, 'err');
+    toast('抽取出错：' + json.error, 'err');
+  }
+}
+
+// ===========================================================================
+// 仅解析
+// ===========================================================================
+$('btnParse').onclick = async () => {
+  if(S.parsing) return;
+  S.parsing = true;
+  $('btnParse').disabled = true;
+  $('btnParse').innerHTML = '<span class="spin"></span> 解析中…';
+  try{
+    const body = new FormData();
+    if(S.mode === 'file'){
+      if(!S.fileId) throw new Error('请先上传文件或选择一个二进制示例');
+      body.append('file_id', S.fileId);
+    }else{
+      const t = $('textInput').value;
+      if(!t.trim()) throw new Error('请输入或粘贴文本内容');
+      body.append('text', t);
+    }
+    const r = await api('/api/parse', {method:'POST', body});
+    renderParse(r);
+    toast('解析完成：' + r.doc.kind + '，' + r.doc.table_count + ' 张表', 'ok');
+  }catch(err){ toast('解析失败：' + err.message, 'err'); }
+  finally{
+    S.parsing = false;
+    $('btnParse').disabled = false;
+    $('btnParse').innerHTML = '◌ 仅解析预览';
+  }
+};
+
+function renderParse(r){
+  const d = r.doc;
+  let h = '<div class="tblmeta">';
+  h += '<span class="pill">' + esc(d.kind) + '</span>';
+  h += '<span class="pill">' + esc(d.detail || '—') + '</span>';
+  h += '<span class="pill">' + d.char_count + ' 字符</span>';
+  h += '<span class="pill">' + d.table_count + ' 张表</span>';
+  h += '<span class="pill">' + d.block_count + ' 个块</span>';
+  if(d.pages > 1) h += '<span class="pill">' + d.pages + ' 页</span>';
+  if(d.needs_ocr) h += '<span class="pill tr">需要 OCR</span>';
+  h += '</div>';
+
+  if(d.warnings && d.warnings.length){
+    h += '<div class="warns" style="margin-bottom:12px">' + d.warnings.map(w =>
+      '<div class="warn-i"><span class="ic">⚠</span><span>' + esc(w) + '</span></div>').join('') + '</div>';
+  }
+  h += '<div class="sect-t">正文预览</div>';
+  h += '<div class="pre">' + (r.text_preview ? esc(r.text_preview) : '<span style="opacity:.6">（二进制文件未返回正文预览，请直接抽取）</span>') + '</div>';
+
+  if(r.tables && r.tables.length){
+    h += '<div class="sect-t">表格结构 · ' + r.tables.length + ' 张</div>';
+    h += r.tables.map(t => renderTablePreviewBlock(t)).join('');
+  }
+  $('parseArea').innerHTML = h;
+  $('cardParse').style.display = '';
+}
+
+function renderTablePreviewBlock(t){
+  let h = '<div style="margin-bottom:14px">';
+  h += '<div class="tblmeta">';
+  h += '<span class="pill">' + esc(t.locator) + '</span>';
+  if(t.caption) h += '<span class="pill">' + esc(t.caption) + '</span>';
+  h += '<span class="pill">' + t.row_count + ' 行 × ' + t.col_count + ' 列</span>';
+  h += '<span class="pill">表头 ' + t.header_rows + ' 行</span>';
+  if(t.merged_cells) h += '<span class="pill">合并单元格 ' + t.merged_cells + '</span>';
+  if(t.page > 1) h += '<span class="pill">第 ' + t.page + ' 页</span>';
+  if(t.truncated) h += '<span class="pill tr">已截断</span>';
+  h += '</div>';
+  h += '<div class="tblwrap"><table><thead><tr>' +
+       (t.columns||[]).map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>' +
+       (t.preview||[]).map(row => '<tr>' + row.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') +
+       '</tbody></table></div></div>';
+  return h;
+}
+
+// ===========================================================================
+// 结果渲染
+// ===========================================================================
+function renderResult(r){
+  const filled = r.fields.filter(f => f.value !== null && f.value !== '' && !(Array.isArray(f.value) && !f.value.length)).length;
+  const bad = r.fields.filter(f => f.status === 'invalid').length;
+  const miss = r.fields.filter(f => f.status === 'missing').length;
+  const low = r.fields.filter(f => f.status === 'low_confidence').length;
+  const pass = r.rules.filter(x => x.passed && !x.skipped).length;
+  const fail = r.rules.filter(x => !x.passed && !x.skipped).length;
+  const skip = r.rules.filter(x => x.skipped).length;
+
+  $('elapsed').textContent = r.elapsed_ms + ' ms · ' + r.engine;
+
+  let h = '';
+
+  // ---- 完成度 ----
+  const v = verdict(r.completeness, bad, fail);
+  h += '<div class="scorebox">' + ring(r.completeness, v.color) + '<div>';
+  h += '<div class="verdictline"><span class="verdict">完成度 ' + r.completeness.toFixed(1) + '%</span>' +
+       '<span class="vtag v-' + v.tag + '">' + v.text + '</span>' +
+       '<span class="chip">模板 ' + esc(r.template_label || r.template) + '</span>' +
+       '<span class="chip"' + (r.engine_note ? ' title="' + esc(r.engine_note) + '"' : '') + '>' +
+       '引擎 ' + esc(r.engine) +
+       (r.engine_mode && r.engine_mode !== r.engine ? '（请求 ' + esc(r.engine_mode) + '）' : '') + '</span></div>';
+  h += '<div class="kpis">';
+  h += kpi(filled + '/' + r.fields.length, '字段已填');
+  h += kpi(r.rows.length, '明细行数');
+  h += kpi(pass + '/' + r.rules.length, '校验通过');
+  if(fail) h += kpi(fail, '校验失败', 'var(--bad)');
+  if(skip) h += kpi(skip, '无法判定', 'var(--faint)');
+  if(miss) h += kpi(miss, '字段缺失', 'var(--faint)');
+  if(low)  h += kpi(low, '可信度低', 'var(--warn)');
+  h += '</div></div></div>';
+
+  // ---- 降级提示 ----
+  const warns = [...(r.doc.warnings||[]), ...(r.warnings||[])];
+  if(warns.length){
+    h += '<div class="sect-t">降级与提示 · ' + warns.length + ' 条</div><div class="warns">' +
+      warns.map(w => '<div class="warn-i"><span class="ic">⚠</span><span>' + esc(w) + '</span></div>').join('') + '</div>';
+  }
+
+  // ---- 字段 ----
+  h += '<div class="sect-t">抽取字段 · ' + r.fields.length + ' 个</div><div class="ftable">';
+  h += r.fields.map(renderField).join('');
+  h += '</div>';
+
+  // ---- 规则 ----
+  if(r.rules.length){
+    h += '<div class="sect-t">跨字段一致性校验 · ' + r.rules.length + ' 条</div><div class="rules">';
+    h += r.rules.map(renderRule).join('');
+    h += '</div>';
+    h += '<div class="btnrow" style="margin-top:11px">' +
+         '<button class="btn sm ghost" id="btnReval">↻ 按当前值重跑校验</button>' +
+         '<label class="tolbox" title="加减法的允许误差。默认留空 = 每条规则用它自己的容差；填数字则覆盖全部规则">' +
+         '容差 <input type="number" id="tolInput" step="0.01" min="0" placeholder="规则自带" value="' +
+         esc(S.tolerance) + '">' +
+         '</label>' +
+         '<span class="chip" style="align-self:center">不重新解析、不调模型</span></div>';
+  }
+
+  // ---- 明细行 ----
+  if(r.rows && r.rows.length){
+    const cols = r.row_columns.length ? r.row_columns : Object.keys(r.rows[0]);
+    h += '<div class="sect-t">明细行 · ' + r.rows.length + ' 行</div><div class="tblwrap"><table><thead><tr>' +
+      cols.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>' +
+      r.rows.map(row => '<tr>' + cols.map(c => '<td>' + esc(row[c] == null ? '' : row[c]) + '</td>').join('') + '</tr>').join('') +
+      '</tbody></table></div>';
+  }
+
+  // ---- 表格 ----
+  if(r.tables && r.tables.length){
+    h += '<div class="sect-t">表格结构 · ' + r.tables.length + ' 张</div>';
+    h += r.tables.map(renderTablePreviewBlock).join('');
+  }
+
+  // ---- JSON ----
+  const out = {};
+  r.fields.forEach(f => { out[f.key] = f.value; });
+  if(r.rows.length) out._rows = r.rows;
+  h += '<div class="sect-t">结构化 JSON 输出</div>' +
+       '<div class="toolbar"><button class="btn sm" id="btnCopy">⧉ 复制 JSON</button>' +
+       '<button class="btn sm ghost" id="btnDown">⇩ 下载 .json</button><span class="spacer"></span>' +
+       '<span class="chip">' + Object.keys(out).length + ' 个键</span></div>' +
+       '<div class="jsonbox" id="jsonOut">' + esc(JSON.stringify(out, null, 2)) + '</div>';
+
+  $('resultArea').innerHTML = h;
+
+  const btnReval = $('btnReval');
+  if(btnReval) btnReval.onclick = () => revalidate(r);
+  $('btnCopy').onclick = async () => {
+    try{ await navigator.clipboard.writeText(JSON.stringify(out, null, 2)); toast('JSON 已复制到剪贴板', 'ok'); }
+    catch(_){ toast('复制失败，请手动选择', 'err'); }
+  };
+  $('btnDown').onclick = () => {
+    const blob = new Blob([JSON.stringify(out, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (r.doc.name || 'extracted').replace(/\.[^.]+$/, '') + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+}
+
+const kpi = (n, t, color) =>
+  '<div class="kpi"><div class="n"' + (color ? ' style="color:'+color+'"' : '') + '>' + esc(n) + '</div><div class="t">' + esc(t) + '</div></div>';
+
+function verdict(score, bad, fail){
+  if(fail || bad) return {tag:'C', text:'有待核对项', color:'var(--warn)'};
+  if(score >= 95) return {tag:'A', text:'完整且自洽', color:'var(--ok)'};
+  if(score >= 75) return {tag:'B', text:'基本完整', color:'var(--accent)'};
+  if(score > 0)   return {tag:'C', text:'信息不全', color:'var(--warn)'};
+  return {tag:'D', text:'未能抽出', color:'var(--bad)'};
+}
+
+function ring(score, color){
+  const R = 58, C = 2 * Math.PI * R, off = C * (1 - Math.max(0, Math.min(100, score)) / 100);
+  return '<div class="ring"><svg width="140" height="140" viewBox="0 0 140 140">' +
+    '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>' +
+    '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round" ' +
+      'stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg>' +
+    '<div class="mid"><div class="num" style="color:' + color + '">' + Math.round(score) + '<span style="font-size:17px">%</span></div>' +
+    '<div class="lbl">COMPLETENESS</div></div></div>';
+}
+
+function renderField(f){
+  const cls = f.status === 'invalid' ? 'bad' : (f.status === 'low_confidence' ? 'warn' : '');
+  const v = f.value;
+  const isEmpty = v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
+  const shown = Array.isArray(v) ? v.join('、') : (isEmpty ? '（未抽到）' : String(v));
+  const c = f.confidence || 0;
+  const ccolor = c >= 0.9 ? 'var(--ok)' : (c >= 0.7 ? 'var(--accent)' : (c > 0 ? 'var(--warn)' : 'var(--faint)'));
+
+  let h = '<div class="frow ' + cls + '">';
+  h += '<div class="top">';
+  h += '<div class="fname"><div class="flabel">' + esc(f.label || f.key) +
+       (f.required ? ' <span class="reqtip">必填</span>' : '') + '</div>' +
+       '<div class="fkey">' + esc(f.key) + ' · ' + esc(f.type) + '</div></div>';
+  h += '<div class="fval' + (isEmpty ? ' nil' : '') + '">' + esc(shown) + '</div>';
+  h += '<div class="conf"><div class="cbar"><i style="width:' + pct(c) + '%;background:' + ccolor + '"></i></div>' +
+       '<span class="cnum">' + pct(c) + '%</span></div>';
+  h += '<div class="st ' + f.status + '">' + statusText(f.status) + '</div>';
+  h += '</div>';
+
+  const s = f.source || {};
+  if(s.strategy && s.strategy !== 'none'){
+    h += '<div class="srcbar"><span class="srctag ' + esc(s.strategy) + '">' + esc(strategyText(s.strategy)) + '</span>';
+    if(s.locator) h += '<span class="srcloc">' + esc(s.locator) + '</span>';
+    if(s.matched_name) h += '<span class="srcloc">命中名：' + esc(s.matched_name) + '</span>';
+    if(s.page > 1) h += '<span class="srcloc">第 ' + s.page + ' 页</span>';
+    h += '</div>';
+    if(s.evidence) h += '<div class="srcmsg"><div class="m">原文：' + esc(s.evidence) + '</div></div>';
+  }
+  if(f.messages && f.messages.length){
+    h += '<div class="srcmsg">' + f.messages.map(m => '<div class="m">' + esc(m) + '</div>').join('') + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+const statusText = (s) => ({ok:'正常', missing:'缺失', invalid:'校验失败', low_confidence:'可信度低'}[s] || s);
+const strategyText = (s) => ({label:'标签行', column:'表头列', regex:'正则', llm:'模型补漏', none:'未抽到'}[s] || s);
+
+function renderRule(r){
+  const cls = r.skipped ? 'skip' : (r.passed ? 'pass' : 'fail');
+  const icon = r.skipped ? '−' : (r.passed ? '✓' : '✗');
+  let h = '<div class="rule ' + cls + '"><span class="mark">' + icon + '</span><div class="body">';
+  h += '<div class="t1"><span class="kd">' + esc(r.kind) + '</span>' + esc(r.description || r.key);
+  if(r.soft) h += '<span class="soft">仅提示</span>';
+  if(r.skipped) h += '<span class="soft" style="color:var(--faint);background:rgba(255,255,255,.05);border-color:var(--border)">无法判定</span>';
+  h += '</div>';
+  if(r.detail) h += '<div class="t2">' + esc(r.detail) + '</div>';
+  h += '</div></div>';
+  return h;
+}
+
+// ===========================================================================
+// 重跑校验
+// ===========================================================================
+async function revalidate(r){
+  try{
+    // 容差留空 = 不覆盖（每条规则各用自己的容差）；填了数字才覆盖全部规则。
+    // 这里刻意不写死 0.02：写死会把模板里刻意的宽容差规则（比如明细合计允许 1 元误差）
+    // 静默收紧成 0.02，用户会看到「明明对得上却报失败」。
+    const raw = ($('tolInput') && $('tolInput').value.trim()) || '';
+    S.tolerance = raw;   // 记进状态，重建结果区后还能填回来
+    const body = {
+      fields: r.fields,
+      rows: r.rows,
+      rules: (S.templateDetail && S.templateDetail.rules) || [],
+    };
+    if(raw !== ''){
+      const tol = Number(raw);
+      if(!Number.isFinite(tol) || tol < 0) throw new Error('容差必须是不小于 0 的数字');
+      body.tolerance = tol;
+    }
+    const out = await postJSON('/api/revalidate', body);
+    r.rules = out.rules;
+    renderResult(r);
+    toast('校验已重跑' + (raw !== '' ? '（容差 ' + body.tolerance + '）' : '') +
+      '：通过 ' + out.passed + '，失败 ' + out.failed + '，跳过 ' + out.skipped,
+      out.failed ? 'err' : 'ok');
+  }catch(err){ toast('重跑校验失败：' + err.message, 'err'); }
+}
+
+// ===========================================================================
+// 清空
+// ===========================================================================
+$('btnClear').onclick = () => {
+  $('textInput').value = ''; onTextInput();
+  S.fileId = ''; S.fileName = ''; S.fileDoc = null; S.result = null; S.tolerance = '';
+  $('fileCard').innerHTML = '';
+  drop.classList.remove('has');
+  drop.innerHTML = '<div class="ico">⇧</div><div class="t1">点击选择，或把文件拖到这里</div><div class="t2">pdf · docx · xlsx · csv · txt · md · png · jpg（≤ 20 MB）</div>';
+  $('progress').classList.remove('on');
+  $('stageLog').innerHTML = '';
+  $('parseArea').innerHTML = ''; $('cardParse').style.display = 'none';
+  $('elapsed').textContent = '';
+  $$('#exList .ex').forEach(x => x.classList.remove('on'));
+  updateSrcState('未选择');
+  $('resultArea').innerHTML = '<div class="empty"><div class="big">🗂</div><h3>还没有抽取结果</h3>' +
+    '<p>左边挑一个内置示例，或粘贴一段文本、上传一份文件，然后点「开始抽取」。<br>' +
+    '每条结果都会标注它的来源定位与置信度 —— 你可以回到原文核对每一个值。</p></div>';
+  toast('已清空');
+};
+
+$('textInput').addEventListener('input', onTextInput);
+$('engineSel').onchange = () => {
+  const m = $('engineSel').value;
+  const t = {auto:'规则优先、模型补漏；两者冲突时保留规则结果并记录分歧。',
+             rule:'零模型调用，全部由规则引擎完成，结果完全可复现。',
+             llm:'主要交给模型，规则结果作为对照；未配置 Key 时自动回退规则。'}[m];
+  $('engineHint').textContent = t;
+};
+
+boot();
+</script>
+</body>
+</html>

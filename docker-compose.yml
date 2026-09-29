@@ -1,0 +1,40 @@
+services:
+  doc-extractor:
+    build: .
+    image: doc-extractor:latest
+    container_name: doc-extractor
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      # 复制 .env.example 为 .env 并填入你自己的 Key。
+      # 即使一个字都不填，服务也会以「规则引擎模式」正常启动：
+      # 解析、字段抽取、明细行校验、票面勾稽全都是真实链路，
+      # 只是模型补漏与图片识别会被明确跳过（并在结果里给出 warnings）。
+      - .env
+    environment:
+      # 生产环境请把 CORS 收窄到具体域名
+      CORS_ORIGINS: "*"
+      # 容器内落盘目录（被下面的 volume 覆盖）
+      DATA_DIR: "/app/data"
+      # 上传大小上限（MB）
+      MAX_UPLOAD_MB: "10"
+      # 解析限制：超限内容会被截断并明确告知，绝不静默丢弃
+      PDF_MAX_PAGES: "60"
+      TABLE_MAX_ROWS: "500"
+      # 抽取引擎：auto（规则优先、模型补漏）/ rule / llm
+      EXTRACT_ENGINE: "auto"
+    volumes:
+      # 上传的文件持久化到宿主机，容器重建后不丢；
+      # 该目录在 .gitignore / .dockerignore 里都已被排除
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

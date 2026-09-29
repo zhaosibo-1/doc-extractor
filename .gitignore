@@ -1,0 +1,32 @@
+# ---- 机密 ----
+.env
+.env.*
+!.env.example
+
+# ---- 上传文件的落盘目录 ----
+# 注意是 data/*  而不是 data/ —— 整体排除目录后，后面的 !data/.gitkeep
+# 无法重新包含目录内的文件（Git 不会为被排除的目录再进内部匹配）。
+# 这个坑在项目 3 里踩过一次，这里直接写对。
+data/*
+!data/.gitkeep
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+
+# ---- 系统 / 编辑器 ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
